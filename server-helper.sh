@@ -12,7 +12,7 @@ else
     sudo apt install -y curl openssh-server ca-certificates tzdata perl
 
     # Install smtp server
-    sudo apt install -y postfix
+    sudo DEBIAN_FRONTEND=noninteractive apt install -y postfix
 
     # Download GitLab and run installer
     curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | sudo bash
