@@ -82,10 +82,10 @@ else
     multipass launch --name jenkins --cloud-init cloud-init.yaml --disk 10G
 
     # Use scp to transfer install-jenkins script to VM
-    scp -i ./id_ed25519 -o StrictHostKeyChecking=no install-jenkins.sh jenkins@$(multipass info jenkins | grep IPv4 | awk '{print $2}'):/home/jenkins
+    scp -i ./id_ed25519 -o StrictHostKeyChecking=no install-jenkins.sh developer@$(multipass info jenkins | grep IPv4 | awk '{print $2}'):/home/developer
 
     # Run install-jenkins file on VM
-    ssh -i id_ed25519 -o StrictHostKeyChecking=no jenkins@$(multipass info jenkins | grep IPv4 | awk '{print $2}') 'bash install-jenkins.sh'
+    ssh -i id_ed25519 -o StrictHostKeyChecking=no developer@$(multipass info jenkins | grep IPv4 | awk '{print $2}') 'bash install-jenkins.sh'
 fi
 
 # Check current state of VM
@@ -99,4 +99,4 @@ else
 fi
 
 # Handle ssh into VM
-ssh -i id_ed25519 -o StrictHostKeyChecking=no jenkins@$(multipass info jenkins | grep IPv4 | awk '{print $2}')
+ssh -i id_ed25519 -o StrictHostKeyChecking=no developer@$(multipass info jenkins | grep IPv4 | awk '{print $2}')

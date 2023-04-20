@@ -15,10 +15,10 @@ else
     echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
     # Get dependencies
-    sudo apt update
-    sudo apt install -y openjdk-11-jre
+    sudo apt update -y
+    sudo apt install -y openjdk-11-jre -y
 
     # Install jenkins
-    sudo apt install jenkins
+    sudo apt install jenkins -y
 
 fi
