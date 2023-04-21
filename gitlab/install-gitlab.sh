@@ -22,6 +22,6 @@ else
     curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | sudo bash
 
     # TODO: Setup external URL
-    sudo EXTERNAL_URL="https://gitlab.example.com" apt-get install gitlab-ee
+    sudo EXTERNAL_URL="https://gitlab.example.com" apt install gitlab-ee -y
 
 fi
