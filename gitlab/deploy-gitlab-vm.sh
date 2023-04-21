@@ -79,7 +79,7 @@ then
     echo "A virtual machine named 'gitlab' already exists."
 else
     echo "Creating virtual machine named 'gitlab'"
-    multipass launch --name gitlab --cloud-init cloud-init.yaml --disk 10G
+    multipass launch --name gitlab --cloud-init cloud-init.yaml --disk 20G --cpus 4 --memory 3G
 
     # Use scp to transfer install-gitlab script to VM
     scp -i ./id_ed25519 -o StrictHostKeyChecking=no install-gitlab.sh gitlab@$(multipass info gitlab | grep IPv4 | awk '{print $2}'):/home/gitlab
