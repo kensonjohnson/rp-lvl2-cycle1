@@ -22,6 +22,7 @@ else
     echo "Installing Jenkins..."
     curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
         /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+    
     echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
     https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
     /etc/apt/sources.list.d/jenkins.list > /dev/null
@@ -75,15 +76,15 @@ else
     sudo apt install -yq wget
 fi
 
-if [ -e ./jenkins-cli.jar ]
+if [ -e ./jenkins/jnlpJars/jenkins-cli.jar ]
 then
     echo "Jenkins-cli already exists."
 else
     echo "Downloading jenkins-cli.jar..."
-    wget "http://localhost:$port/jnlpJars/jenkins-cli.jar"
+    wget -nHP jenkins "http://localhost:$port/jnlpJars/jenkins-cli.jar"
 fi
 
-echo "--httpPort $port" | java -jar jenkins.war --paramsFromStdIn
+echo "--httpPort $port" | java -jar ./jenkins/jnlpJars/jenkins.war --paramsFromStdIn
 
 if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]
 then
@@ -106,4 +107,11 @@ java -jar /usr/share/jenkins/cli.jar -auth $jenkinsUser:$jenkinsPassword -s http
 echo "Creating $user account in Jenkins..."
 echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount("$user", "$passwd")' | java -jar ./jenkins-cli.jar -s "http://127.0.0.1:$port" -auth $jenkinsUser:$jenkinsPassword 
 
+if ! ( cat /etc/hosts | grep jenkins )
+then
+    echo "Adding jenkins host entry..."
+    sudo echo "127.0.0.1 jenkins jenkins" >> /etc/hosts
+else
+    echo "There is already a jenkins entry in hosts."
+fi
 exit
