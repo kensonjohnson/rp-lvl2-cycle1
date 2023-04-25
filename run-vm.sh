@@ -146,26 +146,30 @@ users:
 EOF
 fi
 
+if [ "$app" == "gitlab" ]
+then
+    cpu=4
+    ram=4G
+else
+    cpu=2
+    ram=2G
+fi
+
 echo "launching $app instance with multipass"
 if ( multipass info "$hostn" > /dev/null )
 then
     echo "$app VM exists."
 else
     echo "Creating $app vm..."
-    multipass launch -c 2 -d 10G -m 4G --name "$hostn" --cloud-init cloud-config.yaml
+    multipass launch -c $cpu -d $ram -m 4G --name "$hostn" --cloud-init cloud-config.yaml
 fi
 
 ip=$(multipass info "$hostn" | grep IPv4 | awk '{ print $2 }')
 
 echo "Copying $app install script to vm ~/..."
-if [ "$app" != 'nginx' ]
-then
-    scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh" $user@$ip:"/home/$user/$app-install.sh"
-else
-    scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app-install.sh" $user@$ip:"/home/$user/$app-install.sh"
-fi
+scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh" $user@$ip:"/home/$user/$app-install.sh"
 
-
+echo "Running the $app install script..."
 if [ "$app" = "jenkins" ]
 then
     ssh -i ./ed25519 $user@$ip "bash $app-install.sh $user $passwd $fqdn"
@@ -176,5 +180,5 @@ else
     ssh -i ./ed25519 $user@$ip "bash $app-install.sh"
 fi
 
-
+echo "Establishing SSH connection to $hostn..."
 ssh -i ./ed25519 $user@$ip
