@@ -10,6 +10,7 @@ then
     echo "Java is installed."
 else
     echo "Installing Java..."
+    sudo apt update
     sudo apt install openjdk-11-jdk -yq
     echo "Java installed."
 fi
