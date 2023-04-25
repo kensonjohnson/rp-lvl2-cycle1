@@ -127,5 +127,5 @@ EOF
   sed -i "s/^#letsencrypt['enable'] = false .letsencrypt['enable'] = true" /etc/gitlab/gitlab.rb
   sudo gitlab-ctl reconfigure
 
-
+  exit
 fi
