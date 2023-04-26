@@ -116,7 +116,7 @@ then
         sudo cp ~/snap/multipass/current/data/multipass-client-certificate/multipass_cert.pem /var/snap/multipass/common/data/multipassd/authenticated-certs/multipass_client_certs.pem
     fi
 
-    sudo snap start multipass
+    sudo snap start multipass > /dev/null
     sleep 10
 
     multipass start --all > /dev/null
@@ -165,7 +165,7 @@ then
     echo "$app VM exists."
 else
     echo "Creating $app vm..."
-    multipass launch -cpus $cpu --disk 10G --memory $ram --name "$hostname" --cloud-init cloud-config.yaml
+    multipass launch --cpus $cpu --disk 10G --memory $ram --name "$hostname" --cloud-init cloud-config.yaml
 fi
 
 # Check current state chosen of VM
