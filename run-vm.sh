@@ -27,16 +27,16 @@ do
             # echo $app
         ;;
         d)
-            fqdn=$OPTARG
-            # echo $fqdn
+            fullyQualifiedDomainName=$OPTARG
+            # echo $fullyQualifiedDomainName
         ;;
         h)
-            hostn=$OPTARG
-            # echo $fqdn
+            hostname=$OPTARG
+            # echo $fullyQualifiedDomainName
         ;;
         p)
-            passwd=$OPTARG
-            # echo $passwd
+            password=$OPTARG
+            # echo $password
         ;;
         u)
             user=$OPTARG
@@ -56,9 +56,9 @@ then
     app="nginx"
 fi
 
-if [ "$passwd" = "" ]
+if [ "$password" = "" ]
 then
-    passwd="adminServerPassword"
+    password="adminServerPassword"
 fi
 
 if ! [ "$user" ]
@@ -66,14 +66,14 @@ then
     user=$USER
 fi
 
-if ! [ "$hostn" ]
+if ! [ "$hostname" ]
 then
-    hostn=$app
+    hostname=$app
 fi
 
-if [ "$fqdn" = "" ]
+if [ "$fullyQualifiedDomainName" = "" ]
 then
-    fqdn="relativepath.tech"
+    fullyQualifiedDomainName="relativepath.tech"
 fi
 
 if [ $(uname) = "Linux" ]
@@ -123,6 +123,8 @@ then
     sleep 10
 fi
 
+
+# Check if SSH keys already exist
 if [ -f "./ed25519" ]
 then
     echo "SSH keys exist."
@@ -132,7 +134,7 @@ fi
 
 if ( grep "$(cat ./ed25519.pub)" ./cloud-config.yaml 2> /dev/null )
 then
-    echo "cloud-config.yaml already exists and is correct"
+    echo "cloud-config.yaml configured correctly."
 else
     echo "create cloud-config.yaml and add the ssh public key..."
     cat <<- EOF > cloud-config.yaml
@@ -146,6 +148,7 @@ users:
 EOF
 fi
 
+# GitLab minimum specs call for 4G memory and 4 cpu threads
 if [ "$app" == "gitlab" ]
 then
     cpu=4
@@ -155,16 +158,27 @@ else
     ram=2G
 fi
 
-echo "launching $app instance with multipass"
-if ( multipass info "$hostn" > /dev/null )
+# Check if chosen VM already exists
+echo "Checking for a $app instance within multipass."
+if ( multipass info "$hostname" > /dev/null )
 then
     echo "$app VM exists."
 else
     echo "Creating $app vm..."
-    multipass launch -c $cpu -d $ram -m 4G --name "$hostn" --cloud-init cloud-config.yaml
+    multipass launch -cpus $cpu --disk 10G --memory $ram --name "$hostname" --cloud-init cloud-config.yaml
 fi
 
-ip=$(multipass info "$hostn" | grep IPv4 | awk '{ print $2 }')
+# Check current state chosen of VM
+echo "Checking if $app VM is running."
+if ( multipass info $app | grep Running > /dev/null )
+then
+    echo "$app VM is running."
+else
+    echo "Starting $app VM..."
+    multipass start $app
+fi
+
+ip=$(multipass info "$hostname" | grep IPv4 | awk '{ print $2 }')
 
 echo "Copying $app install script to vm ~/..."
 scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh" $user@$ip:"/home/$user/$app-install.sh"
@@ -172,13 +186,13 @@ scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh"
 echo "Running the $app install script..."
 if [ "$app" = "jenkins" ]
 then
-    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $user $passwd $fqdn"
+    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $user $password $fullyQualifiedDomainName"
 elif [ "$app" = "gitlab" ]
 then
-    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $fqdn"
+    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $fullyQualifiedDomainName"
 else
     ssh -i ./ed25519 $user@$ip "bash $app-install.sh"
 fi
 
-echo "Establishing SSH connection to $hostn..."
+echo "Establishing SSH connection to $hostname..."
 ssh -i ./ed25519 $user@$ip
