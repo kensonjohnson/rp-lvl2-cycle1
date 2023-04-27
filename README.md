@@ -1,11 +1,14 @@
+
 <div align="center">
-<h1> Relative Path Level 2 Cycle 1 </h1>
+    <h1> Relative Path Level 2 Cycle 1 </h1>
 </div>
 A fully automated application pipeline.
 
 
 ## Usage
-The run-vm.sh script installs and configures multipass to run a virtual machine that will host a chosen server.  It has a few options available to help install a virtual machine and configure Nginx, Jenkins or GitLab in a virtual machine.  Those options are:
+The run-vm.sh script installs and configures multipass to run a virtual machine that will host a chosen server on an ARM or X86 Ubuntu based Linux node.  It has a few options available to help install a virtual machine and configure Nginx, Jenkins or GitLab in a virtual machine.  Those options are:
+
+```bash
 
 $ bash run-vm.sh [options]
 
@@ -27,4 +30,7 @@ $ bash run-vm.sh [options]
 
     -?        This Usage message.
 
+```
+
 Each flag takes one argument.
+Example: `bash run-vm.sh -a gitlab -d exampl.com -p gitlabPassword`

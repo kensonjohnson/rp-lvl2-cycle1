@@ -2,3 +2,4 @@ id_ed25519*
 *.yaml
 ed25519*
 *.jar
+authent-fix.sh
