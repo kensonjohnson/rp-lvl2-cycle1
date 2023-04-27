@@ -18,6 +18,8 @@ usage="Usage:       $ bash run-vm.sh [options]
 
   -?        This Usage message."
 
+declare -l app
+
 while getopts "?a:d:h:p:u:" option
 do
     # : "$option" "$OPTARG"
