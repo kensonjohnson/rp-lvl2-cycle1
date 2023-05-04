@@ -96,33 +96,6 @@ then
         echo "Installing multipass..."
         sudo snap install multipass >/dev/null
     fi
-
-    if ( ps -aef | grep multipass.multipassd > /dev/null )
-    then
-        sudo snap stop multipass > /dev/null
-    fi
-
-    if ( ps -aef | grep multipass.gui > /dev/null )
-    then
-        sudo killall multipass.gui >/dev/null
-    fi
-
-    if [ -f "/var/snap/multipass/common/data/multipassd/authenticated-certs/multipass_client_certs.pem" ] > /dev/null
-    then
-        # Removes authentication error by removing client certs and replacing them with user generated cert.
-        sudo rm /var/snap/multipass/common/data/multipassd/authenticated-certs/multipass_client_certs.pem
-    fi
-
-    if [ -f "~/snap/multipass/current/data/multipass-client-certificate/multipass_cert.pem" ] > /dev/null
-    then
-        sudo cp ~/snap/multipass/current/data/multipass-client-certificate/multipass_cert.pem /var/snap/multipass/common/data/multipassd/authenticated-certs/multipass_client_certs.pem
-    fi
-
-    sudo snap start multipass > /dev/null
-    sleep 10
-
-    multipass start --all > /dev/null
-    sleep 10
 fi
 
 
@@ -198,3 +171,5 @@ fi
 
 echo "Establishing SSH connection to $hostname..."
 ssh -i ./ed25519 $user@$ip
+
+exit
