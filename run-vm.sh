@@ -171,3 +171,5 @@ fi
 
 echo "Establishing SSH connection to $hostname..."
 ssh -i ./ed25519 $user@$ip
+
+exit

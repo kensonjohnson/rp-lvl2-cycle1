@@ -123,9 +123,9 @@ EOF
     echo "Could not retrieve initial password."
   fi
 
-  sed -i "s/^#letsencrypt['contact_emails'] = [ ] .letsencrypt['contact_emails'] = ['$USER@relativepath.tech',]" /etc/gitlab/gitlab.rb
-  sed -i "s/^#letsencrypt['enable'] = false .letsencrypt['enable'] = true" /etc/gitlab/gitlab.rb
-  sudo gitlab-ctl reconfigure
-
+  # sed -i "s/^#letsencrypt['contact_emails'] = [ ] .letsencrypt['contact_emails'] = ['$USER@relativepath.tech',]" /etc/gitlab/gitlab.rb
+  # sed -i "s/^#letsencrypt['enable'] = false .letsencrypt['enable'] = true" /etc/gitlab/gitlab.rb
+  # sudo gitlab-ctl reconfigure
+  
   exit
 fi
