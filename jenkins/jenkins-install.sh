@@ -39,24 +39,21 @@ echo "Determining if port 8080 is in use..."
 # Uses Netstat to list active internet connections.  This is piped to grep that 
 # looks for the LISTEN state of a port.  When an entry is found it pipes the entry
 # to another grep to examine the entry for port 8080.
-if ( netstat -an | grep -w LISTEN | grep -w :8080 ) >/dev/null
+if ( netstat -an | grep -w LISTEN | grep -w 8080 ) >/dev/null
 then
     echo "Port 8080 is in use."
     port=8081
 else
     echo "Port 8080 is available."
     port=8080
-if
-
-echo "Configuring port to be used for jenkins service..."
-java -jar jenkins.war --httpPort=$port
+fi
 
 # Setting the variables for the firewall configuration.
 perm="--permanent"
 serv="$perm --service=jenkins"
 
 echo "Checking if firewall is enabled..."
-if [ "ufw status | grep -q 'Status: active'" ]
+if ( sudo ufw status | grep -q 'Status: active' )
 then
     echo "Firewall is enabled"
 else
@@ -98,11 +95,11 @@ then
     echo "Jenkins-cli already exists."
 else
     echo "Downloading jenkins-cli.jar..."
-    wget -nHP jenkins "http://localhost:$port/jnlpJars/jenkins-cli.jar"
+    wget -rnH -P jenkins "http://localhost:$port/jnlpJars/jenkins-cli.jar"
 fi
 
 # Ensuring the port to be used is assigned to the jenkins service.
-echo "--httpPort $port" | java -jar ./jenkins/jnlpJars/jenkins.war --paramsFromStdIn
+echo "--httpPort $port" | java -jar ./jenkins/jnlpJars/jenkins-cli.jar --paramsFromStdIn
 
 echo "Checking for the initial admin password..."
 if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]
@@ -122,17 +119,9 @@ else
 fi
 
 echo "Installing recommended plugins..."
-java -jar /usr/share/jenkins/cli.jar -auth $jenkinsUser:$jenkinsPassword -s http://localhost:$port install-plugin < /usr/share/jenkins/ref/plugins/recommended.txt
+java -jar /jenkins/jnlpJars/cli.jar -auth $jenkinsUser:$jenkinsPassword -s http://localhost:$port install-plugin < /usr/share/jenkins/ref/plugins/recommended.txt
 
 echo "Creating $user account in Jenkins..."
 echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount("$user", "$passwd")' | java -jar ./jenkins-cli.jar -s "http://127.0.0.1:$port" -auth $jenkinsUser:$jenkinsPassword 
 
-echo "Determining if jenkins is listed in the host file..."
-if ! ( cat /etc/hosts | grep jenkins )
-then
-    echo "Adding jenkins host entry..."
-    sudo echo "127.0.0.1 jenkins jenkins" >> /etc/hosts
-else
-    echo "There is already a jenkins entry in hosts."
-fi
 exit

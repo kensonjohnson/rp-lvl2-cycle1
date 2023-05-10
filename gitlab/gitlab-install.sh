@@ -48,7 +48,10 @@ then
   fi
 fi
 
-if ( sudo ufw status | grep "Active" )
+echo "Stopping gitlab for configuration..."
+sudo systemctl stop gitlab-ctl
+
+if ( sudo ufw status | grep -q 'Status: active' )
 then
   echo "Firewall is enabled."
 else
