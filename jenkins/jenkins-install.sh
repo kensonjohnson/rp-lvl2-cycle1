@@ -4,6 +4,7 @@ user=$1
 passwd=$2
 domain=$3
 
+# Necessary as a prerequisite of Jenkins
 echo "Checking for Java installation..."
 if ( java -version )
 then
