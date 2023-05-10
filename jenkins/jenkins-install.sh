@@ -4,6 +4,7 @@ user=$1
 passwd=$2
 domain=$3
 
+# Necessary as a prerequisite of Jenkins
 echo "Checking for Java installation..."
 if ( java -version )
 then
@@ -34,21 +35,25 @@ else
     echo "Jenkins installed."  
 fi
 
-if ( netstat -an | grep -w LISTEN | grep -w :8080 ) >/dev/null
+echo "Determining if port 8080 is in use..."
+# Uses Netstat to list active internet connections.  This is piped to grep that 
+# looks for the LISTEN state of a port.  When an entry is found it pipes the entry
+# to another grep to examine the entry for port 8080.
+if ( netstat -an | grep -w LISTEN | grep -w 8080 ) >/dev/null
 then
     echo "Port 8080 is in use."
     port=8081
 else
     echo "Port 8080 is available."
     port=8080
-if
+fi
 
-java -jar jenkins.war --httpPort=$port
+# Setting the variables for the firewall configuration.
 perm="--permanent"
 serv="$perm --service=jenkins"
 
 echo "Checking if firewall is enabled..."
-if [ "ufw status | grep -q 'Status: active'" ]
+if ( sudo ufw status | grep -q 'Status: active' )
 then
     echo "Firewall is enabled"
 else
@@ -57,18 +62,25 @@ else
 fi
 
 echo "Configuring the firewall to allow Jenkins..."
+# Define the new service that will be configured in the firewall.
 sudo ufw $perm --new-service=jenkins
+# Define the short and long descriptions of the jenkin service firewall rule.
 sudo ufw $serv --set-short="Jenkins ports"
 sudo ufw $serv --set-description="Jenkins port exceptions"
+# Assign the port to the service.
 sudo ufw $serv --add-port=$port/tcp
+# Add a firewall rule for the jenkins service.
 sudo ufw $perm --add-service=jenkins
+# Define the firewall rule for the jenkins service.
 sudo ufw --zone=public --add-service=http --permanent
+# Restart the firewall service to offer the new rule just created.
 sudo ufw --reload
 
 
 echo "Starting jenkins service..."
 sudo systemctl start jenkins.service
 
+echo "Checking if wget is installed..."
 if ( wget -V )
 then
     echo "Wget is already installed."
@@ -77,16 +89,19 @@ else
     sudo apt install -yq wget
 fi
 
+echo "Checking for the jenkins command line interface library..."
 if [ -e ./jenkins/jnlpJars/jenkins-cli.jar ]
 then
     echo "Jenkins-cli already exists."
 else
     echo "Downloading jenkins-cli.jar..."
-    wget -nHP jenkins "http://localhost:$port/jnlpJars/jenkins-cli.jar"
+    wget -rnH -P jenkins "http://localhost:$port/jnlpJars/jenkins-cli.jar"
 fi
 
-echo "--httpPort $port" | java -jar ./jenkins/jnlpJars/jenkins.war --paramsFromStdIn
+# Ensuring the port to be used is assigned to the jenkins service.
+echo "--httpPort $port" | java -jar ./jenkins/jnlpJars/jenkins-cli.jar --paramsFromStdIn
 
+echo "Checking for the initial admin password..."
 if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]
 then
     echo "Retrieving jenkins initial password..."
@@ -95,6 +110,7 @@ else
     echo "InitialAdminPassword file does not exist."
 fi
 
+echo "Retrieving the jenkins default user..."
 if [ -f /etc/sysconfig/jenkins ]
 then
     jenkinsUser=$(grep JENKINS_USER /etc/sysconfig/jenkins)
@@ -103,16 +119,9 @@ else
 fi
 
 echo "Installing recommended plugins..."
-java -jar /usr/share/jenkins/cli.jar -auth $jenkinsUser:$jenkinsPassword -s http://localhost:$port install-plugin < /usr/share/jenkins/ref/plugins/recommended.txt
+java -jar /jenkins/jnlpJars/cli.jar -auth $jenkinsUser:$jenkinsPassword -s http://localhost:$port install-plugin < /usr/share/jenkins/ref/plugins/recommended.txt
 
 echo "Creating $user account in Jenkins..."
 echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount("$user", "$passwd")' | java -jar ./jenkins-cli.jar -s "http://127.0.0.1:$port" -auth $jenkinsUser:$jenkinsPassword 
 
-if ! ( cat /etc/hosts | grep jenkins )
-then
-    echo "Adding jenkins host entry..."
-    sudo echo "127.0.0.1 jenkins jenkins" >> /etc/hosts
-else
-    echo "There is already a jenkins entry in hosts."
-fi
 exit
