@@ -21,6 +21,8 @@ fi
 sudo snap start multipass.multipassd > /dev/null
 multipass start --all > /dev/null
 
+# Uses service socket command to list listening sockets piped to grep for multipass_socket.
+# If the multipass socket isn't listening, it sleeps for 2 seconds and retests the condition.
 while ! (ss -l | grep multipass_socket)
 do
     sleep 2
