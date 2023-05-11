@@ -78,26 +78,7 @@ then
     fullyQualifiedDomainName="relativepath.tech"
 fi
 
-if [ $(uname) = "Linux" ]
-then
-    
-    if ( snap --version 2>/dev/null )
-    then
-        echo "Snap is already installed."
-    else
-        echo "Installing snapd..."
-        sudo apt install -yq snapd
-    fi
-
-    if ( multipass version 2>/dev/null )
-    then
-        echo "Multipass is already installed."
-    else
-        echo "Installing multipass..."
-        sudo snap install multipass >/dev/null
-    fi
-fi
-
+bash multipass-install.sh
 
 # Check if SSH keys already exist
 if [ -f "./ed25519" ]
@@ -112,6 +93,7 @@ then
     echo "cloud-config.yaml configured correctly."
 else
     echo "create cloud-config.yaml and add the ssh public key..."
+    
     cat <<- EOF > cloud-config.yaml
 users:
   - default
@@ -121,6 +103,7 @@ users:
     ssh_authorized_keys:
       - $(cat ./ed25519.pub)
 EOF
+
 fi
 
 # GitLab minimum specs call for 4G memory and 4 cpu threads
@@ -137,36 +120,38 @@ fi
 echo "Checking for a $app instance within multipass."
 if ( multipass info "$hostname" > /dev/null )
 then
-    echo "$app VM exists."
+    echo "$hostname VM exists."
+    # Check current state chosen of VM
+    echo "Checking if $hostname VM is running."
+    
+    if ( multipass info $hostname | grep Running > /dev/null )
+    then
+        echo "$hostname VM is running."
+    else
+        echo "Starting $hostname VM..."
+        multipass start $hostname
+    fi
+    
+    ip=$(multipass info "$hostname" | grep IPv4 | awk '{ print $2 }')
 else
-    echo "Creating $app vm..."
+    echo "Creating $hostname vm..."
     multipass launch --cpus $cpu --disk 10G --memory $ram --name "$hostname" --cloud-init cloud-config.yaml
-fi
+    
+    ip=$(multipass info "$hostname" | grep IPv4 | awk '{ print $2 }')
+    
+    echo "Copying $app install script to vm ~/..."
+    scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh" $user@$ip:"/home/$user/$app/$app-install.sh"
 
-# Check current state chosen of VM
-echo "Checking if $app VM is running."
-if ( multipass info $app | grep Running > /dev/null )
-then
-    echo "$app VM is running."
-else
-    echo "Starting $app VM..."
-    multipass start $app
-fi
-
-ip=$(multipass info "$hostname" | grep IPv4 | awk '{ print $2 }')
-
-echo "Copying $app install script to vm ~/..."
-scp -i ./ed25519 -o StrictHostKeyChecking=accept-new -q "./$app/$app-install.sh" $user@$ip:"/home/$user/$app-install.sh"
-
-echo "Running the $app install script..."
-if [ "$app" = "jenkins" ]
-then
-    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $user $password $fullyQualifiedDomainName"
-elif [ "$app" = "gitlab" ]
-then
-    ssh -i ./ed25519 $user@$ip "bash $app-install.sh $fullyQualifiedDomainName"
-else
-    ssh -i ./ed25519 $user@$ip "bash $app-install.sh"
+    echo "Running the $app install script..."
+    if [ "$app" = "jenkins" ]
+    then
+        ssh -i ./ed25519 $user@$ip "bash ./$app/$app-install.sh $user $password $fullyQualifiedDomainName"
+    elif [ "$app" = "gitlab" ]
+    then
+        ssh -i ./ed25519 $user@$ip "bash ./$app/$app-install.sh $fullyQualifiedDomainName"
+    else
+        ssh -i ./ed25519 $user@$ip "bash ./$app/$app-install.sh"
+    fi
 fi
 
 echo "Establishing SSH connection to $hostname..."

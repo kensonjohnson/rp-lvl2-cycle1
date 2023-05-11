@@ -12,11 +12,7 @@ then
     echo "Installing gitlab dependencies..."
     sudo apt install -yq curl openssh-server ca-certificates tzdata perl lynx
   fi
-    # debconf-set-selections <<< "postfix postfix/mailname string $domain"
-    # debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Local only'" 
-    # or
-    # echo "postfix postfix/mailname string $domain" | debconf-set-selections;
-    # echo "postfix postfix/main_mailer_type string 'Local only'" | debconf-set-selections
+  
   if (apt list --installed | grep postfix)
   then
     echo "Postfix already installed."
@@ -33,20 +29,11 @@ then
   else
     cd /tmp
     
-    if [ $(pwd) == "/tmp" ]
-      echo "Retrieving and running gitlab script..."
-      curl "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" 
-    fi
-    
-    if [ -f /tmp/script.deb.sh ]
-      echo "Configuring sources for gitlab install..."
-      sudo bash /tmp/script.deb.sh
-      sudo rm /tmp/script.deb.sh
-    else
-      echo "Unable to retrieve the sources script for Gitlab."
-      echo "Aborting Gitlab install."
-      exit
-    fi
+    echo "Retrieving and running gitlab script..."
+    curl "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" | bash
+
+    echo "Refreshing sources list..."
+    sudo apt update
     
     echo "Installing gitlab-ee..."
     sudo EXTERNAL_URL="gitlab.$domain" apt install -yq gitlab-ee
@@ -61,7 +48,10 @@ then
   fi
 fi
 
-if ( sudo ufw status | grep "Active" )
+echo "Stopping gitlab for configuration..."
+sudo systemctl stop gitlab-ctl
+
+if ( sudo ufw status | grep -q 'Status: active' )
 then
   echo "Firewall is enabled."
 else
@@ -88,14 +78,14 @@ then
   then
     echo "Adding SSH key to github..."
     # GitLab.com ~/.ssh/config
-      cat <<- EOF > ~/.ssh/config
+      cat <<- EOF >> ~/.ssh/gitlab-config
 # Private GitLab instance
 Host gitlab.$domain 
   PreferredAuthentications publickey
   IdentityFile ~/.ssh/authorized_keys
 EOF
     
-    if [ -f ~/.ssh/config ]
+    if [ -f ~/.ssh/gitlab-config ]
     then
       echo "Gitlab SSH config file created."
     else
@@ -122,10 +112,6 @@ EOF
   else
     echo "Could not retrieve initial password."
   fi
-
-  # sed -i "s/^#letsencrypt['contact_emails'] = [ ] .letsencrypt['contact_emails'] = ['$USER@relativepath.tech',]" /etc/gitlab/gitlab.rb
-  # sed -i "s/^#letsencrypt['enable'] = false .letsencrypt['enable'] = true" /etc/gitlab/gitlab.rb
-  # sudo gitlab-ctl reconfigure
   
   exit
 fi
