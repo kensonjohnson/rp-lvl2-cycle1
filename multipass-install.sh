@@ -18,8 +18,12 @@ then
     fi
 fi
 
-echo "Starting multipass..."
-sudo snap start multipass > /dev/null
-sleep 20
+sudo snap start multipass.multipassd > /dev/null
+multipass start --all > /dev/null
+
+while ! (ss -l | grep multipass_socket)
+do
+    sleep 2
+done
 
 exit
